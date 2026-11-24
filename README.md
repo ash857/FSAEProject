@@ -81,7 +81,7 @@ The code is split into four layers. Data flows one way, from the files on disk d
 ```
   cone_map.csv                      rosbag (odometry + cone detections)
        │                                        │
-  pf.load_map                           data_io.load_bag
+  particle_filter.load_map               data_io.load_bag
        │                                        │
        ▼                                        ▼
   map: colours, xy             odom: t, x, y, yaw      det_t, frames
@@ -98,13 +98,13 @@ The code is split into four layers. Data flows one way, from the files on disk d
                             │ calls
         ┌───────────────────┼─────────────────────────────┐
         ▼                   ▼                             ▼
-  pf.py (the filter)    metrics.consistency ──►     health.update_health
+  particle_filter.py    metrics.consistency ──►     health.update_health
   body_increment        "do the cones fit the       "searching, tracking
   predict               map?" score                  or lost?"
   log_likelihood, weight
-  estimate, n_eff
-  systematic_resample
-  inject_random
+  estimate, n_eff           │
+  systematic_resample       │
+  inject_random             │
                             │
                             ▼
         results: one row per frame (t, x, y, yaw, spread, n_eff, status)
@@ -116,7 +116,7 @@ The code is split into four layers. Data flows one way, from the files on disk d
 | Layer | Files | Role |
 |---|---|---|
 | **Input** | `data_io.py`, `pf.load_map` | Turn the bag and the map file into plain numpy arrays. Nothing downstream knows about ROS. |
-| **Filter** | `pf.py`, `health.py` | The algorithm, as small functions. They take arrays in and give arrays out, and hold no state of their own. |
+| **Filter** | `particle_filter.py`, `health.py` | The algorithm, as small functions. They take arrays in and give arrays out, and hold no state of their own. |
 | **Orchestration** | `test.run` | Owns the state (particles, weights, health counters) and calls the filter functions in order, once per frame. |
 | **Evaluation and display** | `metrics.py`, `faults.py`, `watch.py` | Check, stress-test and show the result. They read the results and don't change the filter. |
 
@@ -137,7 +137,7 @@ The code is split into four layers. Data flows one way, from the files on disk d
 
 | File | What it is for |
 |---|---|
-| `pf.py` | The particle filter itself: loading the map, creating particles, predict, scoring, weighting, estimate, resampling, recovery |
+| `particle_filter.py` | The particle filter itself: loading the map, creating particles, predict, scoring, weighting, estimate, resampling, recovery |
 | `health.py` | Decides whether the filter is searching, tracking or lost |
 | `test.py` | `run(...)`, which ties everything into the full loop. Running it directly processes the whole bag |
 
